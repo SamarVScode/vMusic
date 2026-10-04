@@ -9,3 +9,6 @@ app/build/
 *.apk
 *.jks
 local.properties
+
+.kotlin/
+Task

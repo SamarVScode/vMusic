@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Ambient Specular Glass Glow Behind Glyph -->
+    <path
+        android:pathData="M54,53m-28,0a28,28 0 1,1 56,0a28,28 0 1,1 -56,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="53"
+                android:gradientRadius="28"
+                android:startColor="#30C0111F"
+                android:endColor="#00C0111F" />
+        </aapt:attr>
+    </path>
+
+    <!-- Sleek Geometric Beamed Musical Note Glyph in Blood Red (#C0111F) -->
+    <path
+        android:pathData="
+            M 48.35,67.28 C 49.24,70.01 46.89,73.22 43.11,74.45 C 39.33,75.67 35.54,74.46 34.65,71.72 C 33.76,68.99 36.11,65.78 39.89,64.55 C 43.67,63.33 47.46,64.54 48.35,67.28 Z
+            M 72.35,60.78 C 73.24,63.51 70.89,66.72 67.11,67.95 C 63.33,69.17 59.54,67.96 58.65,65.22 C 57.76,62.49 60.11,59.28 63.89,58.05 C 67.67,56.83 71.46,58.04 72.35,60.78 Z
+            M 44.3,39.5 L 48.5,38.6 L 48.5,69.5 L 44.3,69.5 Z
+            M 68.3,34.4 L 72.5,33.5 L 72.5,63.0 L 68.3,63.0 Z
+            M 44.3,39.5 L 72.0,33.5 C 72.4,33.4 72.8,33.8 72.8,34.5 L 72.8,38.0 C 72.8,38.6 72.5,39.1 72.0,39.2 L 68.3,40.2 L 48.5,44.4 L 44.3,44.4 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="44"
+                android:startY="33"
+                android:endX="66"
+                android:endY="75"
+                android:startColor="#DE1829"
+                android:endColor="#A00B17" />
+        </aapt:attr>
+    </path>
+
+    <!-- Elegant White Specular Highlight: Beam Top Crest -->
+    <path
+        android:pathData="M45.5,39.2 L71.5,33.7"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="45.5"
+                android:startY="39.2"
+                android:endX="71.5"
+                android:endY="33.7"
+                android:startColor="#40FFFFFF"
+                android:centerColor="#FFFFFFFF"
+                android:endColor="#60FFFFFF" />
+        </aapt:attr>
+    </path>
+
+    <!-- Elegant White Specular Highlight: Left Notehead Crest -->
+    <path
+        android:pathData="M35.6,71.4 Q35.5,67.5 39.5,65.8"
+        android:strokeColor="#E6FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round" />
+
+    <!-- Elegant White Specular Highlight: Right Notehead Crest -->
+    <path
+        android:pathData="M59.6,64.9 Q59.5,61.0 63.5,59.3"
+        android:strokeColor="#E6FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round" />
+
+    <!-- Subtle White Specular Sheen: Stems Glass Rim -->
+    <path
+        android:pathData="M44.7,41.0 L44.7,66.0 M68.7,35.0 L68.7,60.0"
+        android:strokeColor="#33FFFFFF"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round" />
+</vector>
