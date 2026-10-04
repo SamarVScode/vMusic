@@ -53,8 +53,9 @@ android {
         jvmTarget = "17"
     }
 
-    buildFeatures {
+        buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -121,3 +122,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
