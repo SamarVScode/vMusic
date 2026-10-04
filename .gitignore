@@ -1,0 +1,10 @@
+.env
+.aegis/
+.agents/
+harness/
+.idea/
+.gradle/
+build/
+app/build/
+*.apk
+*.jks
