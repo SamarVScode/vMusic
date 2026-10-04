@@ -1,42 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- OLED Black Base -->
     <path
         android:fillColor="#000000"
         android:pathData="M0,0h108v108h-108z" />
-
-    <!-- Subtle Deep Crimson Specular Radial Glow -->
-    <path
-        android:pathData="M0,0h108v108h-108z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="radial"
-                android:centerX="54"
-                android:centerY="53"
-                android:gradientRadius="48"
-                android:startColor="#2D0A11"
-                android:endColor="#00000000" />
-        </aapt:attr>
-    </path>
-
-    <!-- Subtle Top-Down Glass Specular Sheen -->
-    <path
-        android:pathData="M0,0h108v108h-108z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="linear"
-                android:startX="54"
-                android:startY="0"
-                android:endX="54"
-                android:endY="64"
-                android:startColor="#14FFFFFF"
-                android:endColor="#00000000" />
-        </aapt:attr>
-    </path>
 </vector>
