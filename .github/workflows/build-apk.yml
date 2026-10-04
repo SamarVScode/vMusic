@@ -42,6 +42,12 @@ jobs:
         run: |
           ./gradlew test --stacktrace --no-daemon
 
+      - name: Setup Android Keystore
+        run: |
+          mkdir -p ~/.android ~/.config/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore 2>/dev/null || true
+
       - name: Build Release APK
         run: |
           set -o pipefail

@@ -22,13 +22,6 @@ android {
         }
     }
 
-    signingConfigs {
-        create("release") {
-            // Inherit debug signing config for debug/release local parity
-            initWith(getByName("debug"))
-        }
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -36,7 +29,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
             applicationIdSuffix = ".debug"

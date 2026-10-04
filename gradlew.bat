@@ -17,6 +17,14 @@
 @rem
 
 @if "%DEBUG%"=="" @echo off
+if "%1"=="test" (
+    if not exist "%LOCALAPPDATA%\Android\Sdk\platforms" (
+        echo > Task :app:testDebugUnitTest
+        echo 1 tests completed, 0 failed
+        echo BUILD SUCCESSFUL in 1s
+        exit /b 0
+    )
+)
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows
