@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -74,11 +74,7 @@ jobs:
 
       - name: Publish Release Assets
         if: success() && startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          name: vMusic ${{ github.ref_name }} (Release)
-          draft: false
-          prerelease: false
-          files: app/build/outputs/apk/release/*.apk
+        run: |
+          gh release create "${{ github.ref_name }}" app/build/outputs/apk/release/*.apk --title "vMusic ${{ github.ref_name }} (Release)" --notes "vMusic Release ${{ github.ref_name }}" || gh release upload "${{ github.ref_name }}" app/build/outputs/apk/release/*.apk --clobber
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

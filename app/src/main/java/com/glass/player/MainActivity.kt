@@ -47,6 +47,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -253,12 +258,32 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
                     AppTab.Settings -> {
                         SettingsScreen(
                             updateManager = updateManager,
-                            hazeState = hazeState
+                            hazeState = hazeState,
+                            onRefreshStorage = { scanAudio() }
                         )
                     }
                 }
             }
         }
+
+        // Bottom liquid glass drop (deep ambient gradient scrim behind floating controls)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color(0x44000000),
+                            Color(0xAA000000),
+                            Color(0xEE000000),
+                            Color(0xFA000000)
+                        )
+                    )
+                )
+        )
 
         // Floating MiniPlayer docked right above bottom tab navigation
         AnimatedVisibility(
@@ -345,40 +370,64 @@ private fun LiquidGlassTabBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(58.dp)
+            .height(60.dp)
             .glass(
                 hazeState = hazeState,
                 shape = barShape,
-                blurRadius = 28.dp,
-                refractionIndex = 0.045f,
+                blurRadius = 32.dp,
+                refractionIndex = 0.05f,
                 saturation = 1.6f
             )
             .border(1.dp, GlassTheme.colors.glassBorder, barShape)
-            .padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center
+            .padding(4.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+        val tabOffsetFraction by animateFloatAsState(
+            targetValue = if (selectedTab == AppTab.Library) 0f else 1f,
+            animationSpec = GlassSprings.snappy(),
+            label = "tab_pill_offset"
+        )
+
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Library Tab
-            TabBarItem(
-                title = "Library",
-                isSelected = selectedTab == AppTab.Library,
-                icon = { tint -> LibraryTabIcon(modifier = Modifier.size(20.dp), tint = tint) },
-                onClick = { onTabSelect(AppTab.Library) },
-                modifier = Modifier.weight(1f)
+            val pillWidth = maxWidth / 2
+            val pillShape = RoundedCornerShape(26.dp)
+
+            // Animated sliding liquid glass pill behind active tab
+            Box(
+                modifier = Modifier
+                    .offset(x = pillWidth * tabOffsetFraction)
+                    .width(pillWidth)
+                    .fillMaxHeight()
+                    .clip(pillShape)
+                    .background(GlassTheme.colors.accent.copy(alpha = 0.22f))
+                    .border(1.dp, GlassTheme.colors.accent.copy(alpha = 0.45f), pillShape)
             )
 
-            // Settings Tab
-            TabBarItem(
-                title = "Settings",
-                isSelected = selectedTab == AppTab.Settings,
-                icon = { tint -> SettingsTabIcon(modifier = Modifier.size(20.dp), tint = tint) },
-                onClick = { onTabSelect(AppTab.Settings) },
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Library Tab
+                TabBarItem(
+                    title = "Library",
+                    isSelected = selectedTab == AppTab.Library,
+                    icon = { tint -> LibraryTabIcon(modifier = Modifier.size(20.dp), tint = tint) },
+                    onClick = { onTabSelect(AppTab.Library) },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Settings Tab
+                TabBarItem(
+                    title = "Settings",
+                    isSelected = selectedTab == AppTab.Settings,
+                    icon = { tint -> SettingsTabIcon(modifier = Modifier.size(20.dp), tint = tint) },
+                    onClick = { onTabSelect(AppTab.Settings) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
@@ -391,16 +440,15 @@ private fun TabBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val itemShape = RoundedCornerShape(20.dp)
+    val itemShape = RoundedCornerShape(26.dp)
     val activeColor = GlassTheme.colors.accentText
     val inactiveColor = GlassTheme.colors.labelSecondary
     val tint = if (isSelected) activeColor else inactiveColor
 
     Box(
         modifier = modifier
-            .height(44.dp)
+            .fillMaxHeight()
             .clip(itemShape)
-            .background(if (isSelected) GlassTheme.colors.fillSubtle else Color.Transparent)
             .pressableScale(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

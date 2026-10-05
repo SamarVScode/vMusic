@@ -22,36 +22,36 @@ const val AGSL_GLASS_SHADER: String = """
     uniform float uSheenAlpha;
     uniform float uSaturation;
 
-    vec4 main(float2 fragCoord) {
+    half4 main(float2 fragCoord) {
         if (uResolution.x <= 0.0 || uResolution.y <= 0.0) {
             return content.eval(fragCoord);
         }
 
-        vec2 center = uResolution * 0.5;
-        vec2 d = (fragCoord - center) / center;
+        float2 center = uResolution * 0.5;
+        float2 d = (fragCoord - center) / center;
         float distFromCenter = length(d);
 
         float edgeFactor = smoothstep(0.65, 1.0, distFromCenter);
-        vec2 refractionDir = distFromCenter > 0.0001 ? normalize(d) : vec2(0.0);
+        float2 refractionDir = distFromCenter > 0.0001 ? normalize(d) : float2(0.0, 0.0);
         float minDimension = min(uResolution.x, uResolution.y);
-        vec2 displacement = refractionDir * (edgeFactor * edgeFactor * uRefractionIndex * minDimension);
+        float2 displacement = refractionDir * (edgeFactor * edgeFactor * uRefractionIndex * minDimension);
 
         float rScale = 1.0 + uChromaticDispersion;
         float bScale = 1.0 - uChromaticDispersion;
 
-        vec2 coordR = clamp(fragCoord + displacement * rScale, vec2(0.0), uResolution);
-        vec2 coordG = clamp(fragCoord + displacement, vec2(0.0), uResolution);
-        vec2 coordB = clamp(fragCoord + displacement * bScale, vec2(0.0), uResolution);
+        float2 coordR = clamp(fragCoord + displacement * rScale, float2(0.0, 0.0), uResolution);
+        float2 coordG = clamp(fragCoord + displacement, float2(0.0, 0.0), uResolution);
+        float2 coordB = clamp(fragCoord + displacement * bScale, float2(0.0, 0.0), uResolution);
 
-        vec4 colorR = content.eval(coordR);
-        vec4 colorG = content.eval(coordG);
-        vec4 colorB = content.eval(coordB);
+        half4 colorR = content.eval(coordR);
+        half4 colorG = content.eval(coordG);
+        half4 colorB = content.eval(coordB);
 
-        vec4 baseColor = vec4(colorR.r, colorG.g, colorB.b, colorG.a);
+        half4 baseColor = half4(colorR.r, colorG.g, colorB.b, colorG.a);
 
         if (uSaturation > 1.0) {
-            float luma = dot(baseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-            baseColor.rgb = mix(vec3(luma), baseColor.rgb, uSaturation);
+            half luma = dot(baseColor.rgb, half3(0.2126, 0.7152, 0.0722));
+            baseColor.rgb = mix(half3(luma), baseColor.rgb, uSaturation);
         }
 
         float distToTouch = distance(fragCoord, uTouchPos);
@@ -62,10 +62,10 @@ const val AGSL_GLASS_SHADER: String = """
         float beam = exp(-pow((diagonal - 0.28) / 0.14, 2.0)) * 0.06;
 
         float bevelGlint = smoothstep(0.92, 1.0, distFromCenter) * 
-                           max(0.0, -dot(refractionDir, vec2(0.7071, 0.7071))) * 0.12;
+                           max(0.0, -dot(refractionDir, float2(0.7071, 0.7071))) * 0.12;
 
         float totalSheen = touchSpecular + beam + bevelGlint;
-        baseColor.rgb += vec3(totalSheen);
+        baseColor.rgb += half3(totalSheen);
 
         return baseColor;
     }
@@ -111,7 +111,7 @@ fun isAgslGlassSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_COD
 @Composable
 fun rememberGlassRuntimeShader(): GlassRuntimeShaderInstance? {
     return if (isAgslGlassSupported()) {
-        remember { GlassRuntimeShaderInstance() }
+        remember { try { GlassRuntimeShaderInstance() } catch (t: Throwable) { null } }
     } else {
         null
     }

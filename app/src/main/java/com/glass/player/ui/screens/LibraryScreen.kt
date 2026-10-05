@@ -132,7 +132,7 @@ fun LibraryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     GlassText(
-                        text = if (isScanning) "Scanning..." else "Scan Local Audio",
+                        text = if (isScanning) "Refreshing..." else "Refresh Local Storage",
                         style = GlassTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
                         color = GlassTheme.colors.accentText
                     )

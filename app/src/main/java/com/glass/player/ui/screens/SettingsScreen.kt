@@ -53,7 +53,8 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     updateManager: AppUpdateManager,
     modifier: Modifier = Modifier,
-    hazeState: HazeState? = null
+    hazeState: HazeState? = null,
+    onRefreshStorage: (() -> Unit)? = null
 ) {
     val updateState by updateManager.updateState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -122,6 +123,40 @@ fun SettingsScreen(
                     subtitle = "Poweramp & System EQ broadcast enabled (AudioEffect session ID)",
                     active = eqBroadcastEnabled
                 )
+
+                SettingDivider()
+
+                // Refresh Local Storage
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressableScale(onClick = { onRefreshStorage?.invoke() })
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        GlassText(
+                            text = "Refresh Local Storage",
+                            style = GlassTheme.typography.headline,
+                            color = GlassTheme.colors.labelPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        GlassText(
+                            text = "Rescan device MediaStore for audio files",
+                            style = GlassTheme.typography.subhead,
+                            color = GlassTheme.colors.labelSecondary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    GlassButton(
+                        text = "Rescan",
+                        variant = GlassButtonVariant.Primary,
+                        onClick = { onRefreshStorage?.invoke() }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -213,7 +248,7 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(100.dp)) // Clearance for bottom tabs
+            Spacer(modifier = Modifier.height(160.dp)) // Clearance for bottom tabs & floating miniplayer
         }
 
         // Display GlassUpdateDialog on top when update is active
