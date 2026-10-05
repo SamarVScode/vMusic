@@ -13,8 +13,16 @@ object GlassSprings {
     const val GentleStiffness = 380f
     const val GentleDamping = 0.86f
 
-    const val OvershootStiffness = 520f
-    const val OvershootDamping = 0.68f
+    const val OvershootStiffness = 450f
+    const val OvershootDamping = 0.60f
+
+    // Authentic iOS bouncy spring with visible overshoot
+    const val BouncyStiffness = 380f
+    const val BouncyDamping = 0.52f
+
+    // Elastic rubber-band spring for tabs and sheets
+    const val ElasticStiffness = 320f
+    const val ElasticDamping = 0.58f
 
     fun <T> stiff(): SpringSpec<T> = spring(
         dampingRatio = StiffDamping,
@@ -34,5 +42,15 @@ object GlassSprings {
     fun <T> overshoot(): SpringSpec<T> = spring(
         dampingRatio = OvershootDamping,
         stiffness = OvershootStiffness
+    )
+
+    fun <T> bouncy(): SpringSpec<T> = spring(
+        dampingRatio = BouncyDamping,
+        stiffness = BouncyStiffness
+    )
+
+    fun <T> elastic(): SpringSpec<T> = spring(
+        dampingRatio = ElasticDamping,
+        stiffness = ElasticStiffness
     )
 }

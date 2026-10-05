@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -162,6 +163,11 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
     var isShuffle by remember { mutableStateOf(false) }
     var isRepeat by remember { mutableStateOf(false) }
     var isNowPlayingExpanded by remember { mutableStateOf(false) }
+
+    // Intercept back gesture to dismiss NowPlayingSheet if open
+    BackHandler(enabled = isNowPlayingExpanded) {
+        isNowPlayingExpanded = false
+    }
 
     // Playback progress ticker simulation (fluid tick when playing)
     LaunchedEffect(isPlaying, currentSong) {
@@ -326,7 +332,7 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
             visible = isNowPlayingExpanded && currentSong != null,
             enter = slideInVertically(
                 initialOffsetY = { it },
-                animationSpec = GlassSprings.snappy()
+                animationSpec = GlassSprings.bouncy()
             ),
             exit = slideOutVertically(
                 targetOffsetY = { it },
@@ -384,7 +390,7 @@ private fun LiquidGlassTabBar(
     ) {
         val tabOffsetFraction by animateFloatAsState(
             targetValue = if (selectedTab == AppTab.Library) 0f else 1f,
-            animationSpec = GlassSprings.snappy(),
+            animationSpec = GlassSprings.bouncy(),
             label = "tab_pill_offset"
         )
 
@@ -449,7 +455,7 @@ private fun TabBarItem(
         modifier = modifier
             .fillMaxHeight()
             .clip(itemShape)
-            .pressableScale(onClick = onClick),
+            .pressableScale(pressedScale = 0.90f, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Row(

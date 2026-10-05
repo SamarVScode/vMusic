@@ -10,9 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 
+/**
+ * Authentic iOS-style pressable scale feedback with elastic spring bounce overshoot
+ */
 fun Modifier.pressableScale(
     enabled: Boolean = true,
-    pressedScale: Float = 0.96f,
+    pressedScale: Float = 0.92f,
     onClick: (() -> Unit)? = null
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
@@ -23,7 +26,7 @@ fun Modifier.pressableScale(
         animationSpec = if (isPressed) {
             GlassSprings.stiff()
         } else {
-            GlassSprings.overshoot()
+            GlassSprings.bouncy()
         },
         label = "glass_pressable_scale"
     )
@@ -49,4 +52,4 @@ fun Modifier.pressableScale(
 
 fun Modifier.pressableScale(
     onClick: () -> Unit
-): Modifier = pressableScale(enabled = true, pressedScale = 0.96f, onClick = onClick)
+): Modifier = pressableScale(enabled = true, pressedScale = 0.92f, onClick = onClick)

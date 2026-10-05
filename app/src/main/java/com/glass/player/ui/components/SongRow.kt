@@ -46,7 +46,7 @@ fun SongRow(
             .fillMaxWidth()
             .clip(cornerShape)
             .background(rowBackground)
-            .pressableScale(onClick = onClick)
+            .pressableScale(pressedScale = 0.94f, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

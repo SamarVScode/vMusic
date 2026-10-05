@@ -1,8 +1,6 @@
 package com.glass.player.design
 
 import android.content.Context
-import android.os.Build
-import android.os.PowerManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -12,7 +10,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,24 +18,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.glass.player.design.shaders.rememberGlassRuntimeShader
-import kotlinx.coroutines.launch
 
 /**
- * Lightweight, crash-proof native Compose glass blur state
+ * Lightweight, crash-proof native Compose glass blur state holder
  */
 class HazeState
 
@@ -53,29 +46,23 @@ enum class GlassQualityTier {
     TierC
 }
 
-val LocalGlassQualityTier = compositionLocalOf<GlassQualityTier?> { null }
-
-fun detectGlassQualityTier(context: Context): GlassQualityTier {
-    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-    if (powerManager?.isPowerSaveMode == true) {
-        return GlassQualityTier.TierC
-    }
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        GlassQualityTier.TierB
-    } else {
-        GlassQualityTier.TierC
-    }
-}
+fun detectGlassQualityTier(context: Context): GlassQualityTier = GlassQualityTier.TierB
 
 @Composable
-fun rememberAutoGlassQualityTier(overrideTier: GlassQualityTier? = null): GlassQualityTier {
-    if (overrideTier != null) return overrideTier
-    val context = LocalContext.current
-    return remember(context) {
-        detectGlassQualityTier(context)
-    }
-}
+fun rememberAutoGlassQualityTier(overrideTier: GlassQualityTier? = null): GlassQualityTier =
+    overrideTier ?: GlassQualityTier.TierB
 
+/**
+ * Authentic iOS-style Liquid Glass Modifier:
+ * 1. Deep frosted acrylic backing plate (OLED black compliant)
+ * 2. Specular bevel hairline border (diagonal specular reflection)
+ * 3. Top-rim curved bevel gleam (simulates ambient light on curved glass edge)
+ * 4. Ambient glass drop shadow for physical separation
+ * 5. Interactive dynamic touch sheen responding to finger gestures
+ *
+ * NOTE: Renders as a background backdrop layer so all text, icons, and buttons
+ * remain 100% razor sharp and crisp with ZERO blur artifacts.
+ */
 fun Modifier.glass(
     hazeState: HazeState? = null,
     shape: Shape = RoundedCornerShape(22.dp),
@@ -88,40 +75,14 @@ fun Modifier.glass(
     interactiveSheen: Boolean = true,
     qualityTier: GlassQualityTier? = null
 ): Modifier = composed {
-    val activeTier = qualityTier 
-        ?: LocalGlassQualityTier.current 
-        ?: rememberAutoGlassQualityTier()
-
-    val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
-
-    val sheenAlpha = remember { Animatable(if (activeTier == GlassQualityTier.TierC) 0.08f else 0.05f) }
+    val sheenAlpha = remember { Animatable(0.04f) }
     var touchPos by remember { mutableStateOf(Offset.Unspecified) }
 
-    val shaderInstance = rememberGlassRuntimeShader()
+    val resolvedTint = tint ?: GlassTheme.colors.glassTint
+    val resolvedBorder = borderBrush ?: GlassTheme.colors.glassBorder
 
-    val blurModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && activeTier != GlassQualityTier.TierC) {
-        Modifier.graphicsLayer {
-            val radiusPx = with(density) { blurRadius.toPx() }
-            if (radiusPx > 0f) {
-                try {
-                    val androidEffect = android.graphics.RenderEffect.createBlurEffect(
-                        radiusPx,
-                        radiusPx,
-                        android.graphics.Shader.TileMode.CLAMP
-                    )
-                    renderEffect = androidEffect.asComposeRenderEffect()
-                } catch (t: Throwable) {
-                    // Graceful fallback to flat glass
-                }
-            }
-            this.shape = shape
-            this.clip = true
-        }
-    } else {
-        Modifier
-    }
-
+    // Interactive finger touch sheen
     val pointerModifier = if (interactiveSheen) {
         Modifier.pointerInput(Unit) {
             awaitEachGesture {
@@ -129,8 +90,8 @@ fun Modifier.glass(
                 touchPos = down.position
                 coroutineScope.launch {
                     sheenAlpha.animateTo(
-                        targetValue = 0.28f,
-                        animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = 0.70f)
+                        targetValue = 0.24f,
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = 0.65f)
                     )
                 }
 
@@ -144,8 +105,8 @@ fun Modifier.glass(
 
                 coroutineScope.launch {
                     sheenAlpha.animateTo(
-                        targetValue = 0.05f,
-                        animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = 0.85f)
+                        targetValue = 0.04f,
+                        animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = 0.80f)
                     )
                 }
             }
@@ -154,86 +115,69 @@ fun Modifier.glass(
         Modifier
     }
 
-    val shaderModifier = Modifier.graphicsLayer {
-        if (activeTier == GlassQualityTier.TierA && shaderInstance != null) {
-            if (size.width > 1f && size.height > 1f) {
-                try {
-                    val touchRadiusPx = with(density) { 72.dp.toPx() }
-                    val cornerRadiusPx = with(density) { 22.dp.toPx() }
-                    shaderInstance.updateUniforms(
-                        resolution = size,
-                        touchPos = touchPos,
-                        touchRadius = touchRadiusPx,
-                        refractionIndex = refractionIndex,
-                        chromaticDispersion = 0.018f,
-                        cornerRadius = cornerRadiusPx,
-                        sheenAlpha = sheenAlpha.value,
-                        saturation = saturation
-                    )
-                    renderEffect = try {
-                        shaderInstance.toComposeRenderEffect()
-                    } catch (t: Throwable) {
-                        null
-                    }
-                } catch (t: Throwable) {
-                    renderEffect = null
-                }
-            }
-        }
-        this.shape = shape
-        this.clip = true
-    }
+    // 1. Physical drop shadow elevation
+    val shadowModifier = Modifier.shadow(
+        elevation = 8.dp,
+        shape = shape,
+        clip = false,
+        ambientColor = Color(0x60000000),
+        spotColor = Color(0x90000000)
+    )
 
-    val resolvedTint = tint ?: GlassTheme.colors.glassTint
-    val tintModifier = Modifier.background(color = resolvedTint, shape = shape)
-
-    val resolvedBorder = borderBrush ?: GlassTheme.colors.glassBorder
-    val borderModifier = Modifier.border(width = borderWidth, brush = resolvedBorder, shape = shape)
-
-    val overlayModifier = Modifier
+    // 2. Translucent frosted backing plate
+    val backingModifier = Modifier
         .clip(shape)
-        .drawWithContent {
-            drawContent()
+        .background(color = resolvedTint, shape = shape)
 
-            val innerShadowBrush = Brush.verticalGradient(
-                colors = listOf(Color.Transparent, Color(0x18000000)),
-                startY = size.height * 0.72f,
-                endY = size.height
-            )
-            drawRect(brush = innerShadowBrush)
+    // 3. Specular border hairline
+    val borderModifier = Modifier.border(
+        width = borderWidth,
+        brush = resolvedBorder,
+        shape = shape
+    )
 
-            if (activeTier != GlassQualityTier.TierA && touchPos.isSpecified && sheenAlpha.value > 0.01f) {
-                val sheenRadius = (size.minDimension * 0.7f).coerceIn(40f, 260f)
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = (sheenAlpha.value * 0.75f).coerceIn(0f, 0.32f)),
-                            Color.Transparent
-                        ),
-                        center = touchPos,
-                        radius = sheenRadius
+    // 4. Optical glass overlays (Top-rim light shine, inner bottom shadow, and dynamic touch sheen)
+    val opticalOverlay = Modifier.drawWithContent {
+        drawContent()
+
+        // Top-rim specular reflection (iOS curved glass bevel light)
+        val topRimBrush = Brush.verticalGradient(
+            colors = listOf(Color(0x30FFFFFF), Color(0x08FFFFFF), Color.Transparent),
+            startY = 0f,
+            endY = (size.height * 0.40f).coerceAtMost(50f)
+        )
+        drawRect(brush = topRimBrush)
+
+        // Bottom inner ambient shadow
+        val innerShadowBrush = Brush.verticalGradient(
+            colors = listOf(Color.Transparent, Color(0x20000000)),
+            startY = size.height * 0.70f,
+            endY = size.height
+        )
+        drawRect(brush = innerShadowBrush)
+
+        // Moving radial touch sheen
+        if (touchPos.isSpecified && sheenAlpha.value > 0.01f) {
+            val sheenRadius = (size.minDimension * 0.75f).coerceIn(40f, 280f)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = sheenAlpha.value.coerceIn(0f, 0.30f)),
+                        Color.Transparent
                     ),
                     center = touchPos,
                     radius = sheenRadius
-                )
-            }
-
-            val fauxAmbientBrush = Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.07f),
-                    Color.Transparent,
-                    Color.Transparent
                 ),
-                start = Offset.Zero,
-                end = Offset(size.width * 0.6f, size.height * 0.6f)
+                center = touchPos,
+                radius = sheenRadius
             )
-            drawRect(brush = fauxAmbientBrush)
         }
+    }
 
-    this.then(pointerModifier)
-        .then(blurModifier)
-        .then(shaderModifier)
-        .then(tintModifier)
+    this
+        .then(pointerModifier)
+        .then(shadowModifier)
+        .then(backingModifier)
         .then(borderModifier)
-        .then(overlayModifier)
+        .then(opticalOverlay)
 }

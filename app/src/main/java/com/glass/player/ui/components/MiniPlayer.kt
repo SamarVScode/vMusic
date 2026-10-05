@@ -140,7 +140,7 @@ fun MiniPlayer(
                     .size(42.dp)
                     .clip(CircleShape)
                     .background(GlassTheme.colors.accent)
-                    .pressableScale(onClick = onPlayPauseClick),
+                    .pressableScale(pressedScale = 0.86f, onClick = onPlayPauseClick),
                 contentAlignment = Alignment.Center
             ) {
                 if (isPlaying) {
