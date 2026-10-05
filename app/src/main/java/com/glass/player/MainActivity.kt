@@ -262,7 +262,7 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 74.dp, start = 14.dp, end = 14.dp)
+                .padding(bottom = 80.dp, start = 14.dp, end = 14.dp)
         ) {
             currentSong?.let { song ->
                 MiniPlayer(

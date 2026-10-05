@@ -73,14 +73,35 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(GlassTheme.colors.background)
     ) {
-        // Grouped Settings Content scrolling smoothly under pinned header
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(top = 110.dp, bottom = 160.dp)
+                .statusBarsPadding()
         ) {
+            // Header Row: Settings title
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GlassText(
+                    text = "Settings",
+                    style = GlassTheme.typography.largeTitle,
+                    color = GlassTheme.colors.labelPrimary
+                )
+            }
+
+            // Grouped Settings Content
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 150.dp)
+            ) {
             // SECTION 1: AUDIO ENGINE
             SectionTitle(title = "AUDIO ENGINE (BIT-PERFECT)")
 
@@ -241,27 +262,7 @@ fun SettingsScreen(
             }
         }
 
-        // Pinned Liquid Glass Top Bar protecting Status Bar
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .glass(
-                    hazeState = hazeState,
-                    shape = RectangleShape,
-                    blurRadius = 28.dp,
-                    refractionIndex = 0.04f
-                )
-                .border(0.5.dp, GlassTheme.colors.glassBorder, RectangleShape)
-                .statusBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 14.dp)
-        ) {
-            GlassText(
-                text = "Settings",
-                style = GlassTheme.typography.largeTitle,
-                color = GlassTheme.colors.labelPrimary
-            )
-        }
+    }
 
         // GitHub Release Update Dialog
         when (val state = updateState) {

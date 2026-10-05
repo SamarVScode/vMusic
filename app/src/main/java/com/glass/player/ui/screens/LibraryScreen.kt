@@ -34,13 +34,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
+import com.glass.player.design.HazeState
 import com.glass.player.design.glass
 import com.glass.player.design.motion.pressableScale
 import com.glass.player.design.motion.rubberBandOverscroll
@@ -51,7 +52,6 @@ import com.glass.player.ui.components.GlassButtonVariant
 import com.glass.player.ui.components.SearchIcon
 import com.glass.player.ui.components.SongRow
 import com.glass.player.ui.components.ToneFallbackIcon
-import com.glass.player.design.HazeState
 
 enum class LibraryFilter {
     All,
@@ -102,93 +102,16 @@ fun LibraryScreen(
             .fillMaxSize()
             .background(GlassTheme.colors.background)
     ) {
-        // Track list scrolling behind the pinned header
-        if (!hasPermission) {
-            PermissionRequiredCard(
-                onRequestPermission = onRequestPermission,
-                hazeState = hazeState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 230.dp)
-            )
-        } else if (filteredSongs.isEmpty()) {
-            EmptyLibraryCard(
-                searchQuery = searchQuery,
-                onScanClick = onScanClick,
-                hazeState = hazeState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 230.dp)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .rubberBandOverscroll(orientation = Orientation.Vertical),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 210.dp,
-                    bottom = 160.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                items(filteredSongs, key = { it.id }) { song ->
-                    SongRow(
-                        song = song,
-                        isSelected = currentSong?.id == song.id,
-                        isPlaying = isPlaying && (currentSong?.id == song.id),
-                        onClick = { onSongClick(song) }
-                    )
-                }
-            }
-        }
-
-        // Pinned Liquid Glass Header protecting Status Bar
-        PinnedGlassHeader(
-            searchQuery = searchQuery,
-            onQueryChange = { searchQuery = it },
-            selectedFilter = selectedFilter,
-            onFilterChange = { selectedFilter = it },
-            onRefreshClick = onScanClick,
-            isScanning = isScanning,
-            trackCount = filteredSongs.size,
-            hazeState = hazeState,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
-    }
-}
-
-@Composable
-private fun PinnedGlassHeader(
-    searchQuery: String,
-    onQueryChange: (String) -> Unit,
-    selectedFilter: LibraryFilter,
-    onFilterChange: (LibraryFilter) -> Unit,
-    onRefreshClick: () -> Unit,
-    isScanning: Boolean,
-    trackCount: Int,
-    hazeState: HazeState?,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .glass(
-                hazeState = hazeState,
-                shape = RectangleShape,
-                blurRadius = 28.dp,
-                refractionIndex = 0.04f
-            )
-            .border(0.5.dp, GlassTheme.colors.glassBorder, RectangleShape)
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // Screen Header: Title + Lossless Count
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -198,56 +121,125 @@ private fun PinnedGlassHeader(
                     color = GlassTheme.colors.labelPrimary
                 )
 
-                GlassText(
-                    text = "$trackCount Lossless",
-                    style = GlassTheme.typography.caption.copy(fontWeight = FontWeight.Medium),
-                    color = GlassTheme.colors.labelSecondary
-                )
+                val badgeShape = RoundedCornerShape(12.dp)
+                Box(
+                    modifier = Modifier
+                        .clip(badgeShape)
+                        .background(GlassTheme.colors.fillSubtle)
+                        .border(0.5.dp, GlassTheme.colors.glassBorderStart, badgeShape)
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GlassText(
+                        text = "${filteredSongs.size} Lossless",
+                        style = GlassTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = GlassTheme.colors.accentText
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
+            // Glass Pill Search Bar
             SearchBar(
                 query = searchQuery,
-                onQueryChange = onQueryChange,
+                onQueryChange = { searchQuery = it },
                 hazeState = hazeState,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Segmented Filter Chips
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 FilterChip(
                     label = "All",
                     selected = selectedFilter == LibraryFilter.All,
-                    onClick = { onFilterChange(LibraryFilter.All) }
+                    onClick = { selectedFilter = LibraryFilter.All }
                 )
 
                 FilterChip(
                     label = "24-Bit Hi-Res",
                     selected = selectedFilter == LibraryFilter.HiRes,
-                    onClick = { onFilterChange(LibraryFilter.HiRes) }
+                    onClick = { selectedFilter = LibraryFilter.HiRes }
                 )
 
                 FilterChip(
                     label = "FLAC",
                     selected = selectedFilter == LibraryFilter.Flac,
-                    onClick = { onFilterChange(LibraryFilter.Flac) }
+                    onClick = { selectedFilter = LibraryFilter.Flac }
                 )
 
                 FilterChip(
                     label = if (isScanning) "Refreshing..." else "Refresh Storage",
                     selected = false,
                     isAction = true,
-                    onClick = onRefreshClick
+                    onClick = onScanClick
                 )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Main Content Area
+            if (!hasPermission) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    PermissionRequiredCard(
+                        onRequestPermission = onRequestPermission,
+                        hazeState = hazeState,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else if (filteredSongs.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyLibraryCard(
+                        searchQuery = searchQuery,
+                        onScanClick = onScanClick,
+                        hazeState = hazeState,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .rubberBandOverscroll(orientation = Orientation.Vertical),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 4.dp,
+                        bottom = 150.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(filteredSongs, key = { it.id }) { song ->
+                        SongRow(
+                            song = song,
+                            isSelected = currentSong?.id == song.id,
+                            isPlaying = isPlaying && (currentSong?.id == song.id),
+                            onClick = { onSongClick(song) }
+                        )
+                    }
+                }
             }
         }
     }
@@ -264,7 +256,7 @@ private fun FilterChip(
     val bgColor = when {
         selected -> GlassTheme.colors.accent.copy(alpha = 0.22f)
         isAction -> GlassTheme.colors.fillSubtle
-        else -> androidx.compose.ui.graphics.Color.Transparent
+        else -> Color.Transparent
     }
     val borderColor = when {
         selected -> GlassTheme.colors.accent
@@ -282,7 +274,7 @@ private fun FilterChip(
             .background(bgColor)
             .border(0.8.dp, borderColor, chipShape)
             .pressableScale(pressedScale = 0.92f, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 14.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         GlassText(
@@ -306,7 +298,7 @@ private fun SearchBar(
 
     Box(
         modifier = modifier
-            .height(44.dp)
+            .height(46.dp)
             .glass(
                 hazeState = hazeState,
                 shape = pillShape,
