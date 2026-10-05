@@ -13,7 +13,9 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.glass.player.domain.Song
 import com.glass.player.domain.model.Track
+import com.glass.player.domain.toSong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -172,6 +174,10 @@ object PlayerController {
     /**
      * Plays a track, optionally setting a new playlist.
      */
+    fun playSong(song: Song, newPlaylist: List<Song>? = null) {
+        playTrack(song.toTrack(), newPlaylist?.map { it.toTrack() })
+    }
+
     fun playTrack(track: Track, newPlaylist: List<Track>? = null) {
         runOnMain {
             val player = exoPlayer ?: run {
@@ -389,11 +395,15 @@ object PlayerController {
             }
             .build()
 
-        return MediaItem.Builder()
+        val builder = MediaItem.Builder()
             .setMediaId(id.toString())
             .setUri(Uri.parse(contentUri))
             .setMediaMetadata(metadata)
-            .setMimeType(mimeType)
-            .build()
+
+        if (contentUri.startsWith("content://") && mimeType.isNotBlank()) {
+            builder.setMimeType(mimeType)
+        }
+
+        return builder.build()
     }
 }

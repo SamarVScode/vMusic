@@ -138,9 +138,8 @@ fun Modifier.glass(
     )
 
     // 4. Optical glass overlays (Top-rim light shine, inner bottom shadow, and dynamic touch sheen)
-    val opticalOverlay = Modifier.drawWithContent {
-        drawContent()
-
+    // Drawn behind content so typography, icons, and text are 100% crisp and never washed out
+    val opticalOverlay = Modifier.drawBehind {
         // Top-rim specular reflection (iOS curved glass bevel light)
         val topRimBrush = Brush.verticalGradient(
             colors = listOf(Color(0x30FFFFFF), Color(0x08FFFFFF), Color.Transparent),

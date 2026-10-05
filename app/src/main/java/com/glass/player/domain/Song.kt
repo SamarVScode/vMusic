@@ -1,5 +1,6 @@
 package com.glass.player.domain
 
+import com.glass.player.domain.model.Track
 import java.util.Locale
 
 data class Song(
@@ -31,4 +32,32 @@ data class Song(
         } else {
             "AAC / MP3"
         }
+
+    fun toTrack(): Track = Track(
+        id = id,
+        title = title,
+        artist = artist,
+        album = album,
+        durationMs = durationMs,
+        contentUri = contentUri,
+        albumArtUri = albumArtUri,
+        isFlac = isFlac,
+        bitDepth = bitDepth,
+        sampleRate = sampleRate,
+        mimeType = mimeType
+    )
 }
+
+fun Track.toSong(): Song = Song(
+    id = id,
+    title = title,
+    artist = artist,
+    album = album,
+    durationMs = durationMs,
+    contentUri = contentUri,
+    albumArtUri = albumArtUri,
+    isFlac = isFlac,
+    bitDepth = bitDepth,
+    sampleRate = sampleRate,
+    mimeType = mimeType
+)

@@ -36,6 +36,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import com.glass.player.domain.toSong
+import com.glass.player.playback.PlayerController
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -86,6 +89,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PlayerController.initialize(applicationContext)
 
         val updateManager = AppUpdateManager(
             context = applicationContext,
@@ -156,10 +160,12 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
         }
     }
 
-    // Playback state
-    var currentSong by remember { mutableStateOf<Song?>(songs.firstOrNull()) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var currentPositionMs by remember { mutableLongStateOf(0L) }
+    // Real playback state from PlayerController
+    val playerTrack by PlayerController.currentTrack.collectAsState()
+    val isPlaying by PlayerController.isPlaying.collectAsState()
+    val currentPositionMs by PlayerController.currentPositionMs.collectAsState()
+    val playerDurationMs by PlayerController.durationMs.collectAsState()
+
     var isShuffle by remember { mutableStateOf(false) }
     var isRepeat by remember { mutableStateOf(false) }
     var isNowPlayingExpanded by remember { mutableStateOf(false) }
@@ -169,67 +175,37 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
         isNowPlayingExpanded = false
     }
 
-    // Playback progress ticker simulation (fluid tick when playing)
-    LaunchedEffect(isPlaying, currentSong) {
-        while (isActive && isPlaying && currentSong != null) {
-            delay(200L)
-            val duration = currentSong?.durationMs ?: 0L
-            if (duration > 0) {
-                if (currentPositionMs + 200L >= duration) {
-                    if (isRepeat) {
-                        currentPositionMs = 0L
-                    } else {
-                        // Advance to next song
-                        val currentIndex = songs.indexOfFirst { it.id == currentSong?.id }
-                        val nextIndex = if (currentIndex != -1 && currentIndex + 1 < songs.size) {
-                            currentIndex + 1
-                        } else {
-                            0
-                        }
-                        currentSong = songs.getOrNull(nextIndex)
-                        currentPositionMs = 0L
-                    }
-                } else {
-                    currentPositionMs += 200L
-                }
-            }
+    val currentSong = playerTrack?.toSong() ?: songs.firstOrNull()
+    val effectiveDurationMs = if (playerDurationMs > 0L) playerDurationMs else (currentSong?.durationMs ?: 1L)
+    val progressFraction = (currentPositionMs.toFloat() / effectiveDurationMs.toFloat()).coerceIn(0f, 1f)
+
+    fun playTrack(song: Song) {
+        if (playerTrack?.id == song.id) {
+            PlayerController.togglePlayPause()
+        } else {
+            PlayerController.playSong(song, songs)
         }
     }
 
-    fun playTrack(song: Song) {
-        if (currentSong?.id == song.id) {
-            isPlaying = !isPlaying
+    fun togglePlayPause() {
+        if (playerTrack == null) {
+            songs.firstOrNull()?.let { playTrack(it) }
         } else {
-            currentSong = song
-            currentPositionMs = 0L
-            isPlaying = true
+            PlayerController.togglePlayPause()
         }
     }
 
     fun skipToPrevious() {
-        val currentIndex = songs.indexOfFirst { it.id == currentSong?.id }
-        val prevIndex = if (currentIndex > 0) currentIndex - 1 else songs.size - 1
-        currentSong = songs.getOrNull(prevIndex)
-        currentPositionMs = 0L
-        isPlaying = true
+        PlayerController.skipPrevious()
     }
 
     fun skipToNext() {
-        val currentIndex = songs.indexOfFirst { it.id == currentSong?.id }
-        val nextIndex = if (isShuffle) {
-            songs.indices.random()
-        } else if (currentIndex != -1 && currentIndex + 1 < songs.size) {
-            currentIndex + 1
-        } else {
-            0
-        }
-        currentSong = songs.getOrNull(nextIndex)
-        currentPositionMs = 0L
-        isPlaying = true
+        PlayerController.skipNext()
     }
 
-    val currentDuration = currentSong?.durationMs ?: 1L
-    val progressFraction = (currentPositionMs.toFloat() / currentDuration.toFloat()).coerceIn(0f, 1f)
+    fun seekTo(positionMs: Long) {
+        PlayerController.seekTo(positionMs)
+    }
 
     Box(
         modifier = Modifier
@@ -306,7 +282,7 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
                     song = song,
                     isPlaying = isPlaying,
                     progress = progressFraction,
-                    onPlayPauseClick = { isPlaying = !isPlaying },
+                    onPlayPauseClick = { togglePlayPause() },
                     onExpand = { isNowPlayingExpanded = true },
                     hazeState = hazeState
                 )
@@ -344,15 +320,15 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
                     song = song,
                     isPlaying = isPlaying,
                     currentPositionMs = currentPositionMs,
-                    durationMs = song.durationMs,
+                    durationMs = effectiveDurationMs,
                     isShuffle = isShuffle,
                     isRepeat = isRepeat,
-                    onPlayPauseClick = { isPlaying = !isPlaying },
+                    onPlayPauseClick = { togglePlayPause() },
                     onPreviousClick = { skipToPrevious() },
                     onNextClick = { skipToNext() },
                     onShuffleClick = { isShuffle = !isShuffle },
                     onRepeatClick = { isRepeat = !isRepeat },
-                    onSeek = { targetMs -> currentPositionMs = targetMs },
+                    onSeek = { targetMs -> seekTo(targetMs) },
                     onDismiss = { isNowPlayingExpanded = false },
                     hazeState = hazeState
                 )
@@ -384,7 +360,6 @@ private fun LiquidGlassTabBar(
                 refractionIndex = 0.05f,
                 saturation = 1.6f
             )
-            .border(1.dp, GlassTheme.colors.glassBorder, barShape)
             .padding(4.dp),
         contentAlignment = Alignment.CenterStart
     ) {
