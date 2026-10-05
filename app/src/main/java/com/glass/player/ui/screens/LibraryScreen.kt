@@ -37,6 +37,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
+import com.glass.player.design.HazeState
+import com.glass.player.design.hazeSource
 import com.glass.player.design.glass
 import com.glass.player.design.motion.pressableScale
 import com.glass.player.design.motion.rubberBandOverscroll
@@ -47,7 +49,6 @@ import com.glass.player.ui.components.GlassButtonVariant
 import com.glass.player.ui.components.SearchIcon
 import com.glass.player.ui.components.SongRow
 import com.glass.player.ui.components.ToneFallbackIcon
-import dev.chrisbanes.haze.HazeState
 
 @Composable
 fun LibraryScreen(

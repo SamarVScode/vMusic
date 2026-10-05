@@ -33,11 +33,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
+import com.glass.player.design.HazeState
+import com.glass.player.design.hazeSource
 import com.glass.player.design.glass
 import com.glass.player.design.motion.GlassSprings
 import com.glass.player.design.motion.pressableScale
 import com.glass.player.domain.Song
-import dev.chrisbanes.haze.HazeState
 
 @Composable
 fun MiniPlayer(

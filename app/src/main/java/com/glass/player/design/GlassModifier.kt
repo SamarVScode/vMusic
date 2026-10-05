@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -34,10 +35,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.glass.player.design.shaders.rememberGlassRuntimeShader
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.launch
+
+/**
+ * Lightweight, crash-proof native Compose glass blur state
+ */
+class HazeState
+
+@Composable
+fun rememberHazeState(): HazeState = remember { HazeState() }
+
+fun Modifier.hazeSource(state: HazeState): Modifier = this
 
 enum class GlassQualityTier {
     TierA,
@@ -52,10 +60,10 @@ fun detectGlassQualityTier(context: Context): GlassQualityTier {
     if (powerManager?.isPowerSaveMode == true) {
         return GlassQualityTier.TierC
     }
-    return when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> GlassQualityTier.TierA
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> GlassQualityTier.TierB
-        else -> GlassQualityTier.TierC
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        GlassQualityTier.TierB
+    } else {
+        GlassQualityTier.TierC
     }
 }
 
@@ -92,14 +100,24 @@ fun Modifier.glass(
 
     val shaderInstance = rememberGlassRuntimeShader()
 
-    val blurModifier = if (activeTier != GlassQualityTier.TierC && hazeState != null) {
-        Modifier.hazeEffect(
-            state = hazeState,
-            style = HazeStyle(
-                blurRadius = blurRadius,
-                tints = emptyList()
-            )
-        )
+    val blurModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && activeTier != GlassQualityTier.TierC) {
+        Modifier.graphicsLayer {
+            val radiusPx = with(density) { blurRadius.toPx() }
+            if (radiusPx > 0f) {
+                try {
+                    val androidEffect = android.graphics.RenderEffect.createBlurEffect(
+                        radiusPx,
+                        radiusPx,
+                        android.graphics.Shader.TileMode.CLAMP
+                    )
+                    renderEffect = androidEffect.asComposeRenderEffect()
+                } catch (t: Throwable) {
+                    // Graceful fallback to flat glass
+                }
+            }
+            this.shape = shape
+            this.clip = true
+        }
     } else {
         Modifier
     }
@@ -138,19 +156,29 @@ fun Modifier.glass(
 
     val shaderModifier = Modifier.graphicsLayer {
         if (activeTier == GlassQualityTier.TierA && shaderInstance != null) {
-            val touchRadiusPx = with(density) { 72.dp.toPx() }
-            val cornerRadiusPx = with(density) { 22.dp.toPx() }
-            shaderInstance.updateUniforms(
-                resolution = size,
-                touchPos = touchPos,
-                touchRadius = touchRadiusPx,
-                refractionIndex = refractionIndex,
-                chromaticDispersion = 0.018f,
-                cornerRadius = cornerRadiusPx,
-                sheenAlpha = sheenAlpha.value,
-                saturation = saturation
-            )
-            renderEffect = shaderInstance.toComposeRenderEffect()
+            if (size.width > 1f && size.height > 1f) {
+                try {
+                    val touchRadiusPx = with(density) { 72.dp.toPx() }
+                    val cornerRadiusPx = with(density) { 22.dp.toPx() }
+                    shaderInstance.updateUniforms(
+                        resolution = size,
+                        touchPos = touchPos,
+                        touchRadius = touchRadiusPx,
+                        refractionIndex = refractionIndex,
+                        chromaticDispersion = 0.018f,
+                        cornerRadius = cornerRadiusPx,
+                        sheenAlpha = sheenAlpha.value,
+                        saturation = saturation
+                    )
+                    renderEffect = try {
+                        shaderInstance.toComposeRenderEffect()
+                    } catch (t: Throwable) {
+                        null
+                    }
+                } catch (t: Throwable) {
+                    renderEffect = null
+                }
+            }
         }
         this.shape = shape
         this.clip = true

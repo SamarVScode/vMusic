@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
+import com.glass.player.design.HazeState
+import com.glass.player.design.hazeSource
 import com.glass.player.design.glass
 import com.glass.player.design.motion.GlassSprings
 import com.glass.player.design.motion.pressableScale
@@ -70,8 +72,6 @@ import com.glass.player.ui.components.NowPlayingSheet
 import com.glass.player.ui.components.SettingsTabIcon
 import com.glass.player.ui.screens.LibraryScreen
 import com.glass.player.ui.screens.SettingsScreen
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

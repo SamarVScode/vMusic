@@ -38,6 +38,8 @@ import com.glass.player.BuildConfig
 import com.glass.player.design.GlassQualityTier
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
+import com.glass.player.design.HazeState
+import com.glass.player.design.hazeSource
 import com.glass.player.design.glass
 import com.glass.player.design.motion.GlassSprings
 import com.glass.player.design.motion.pressableScale
@@ -46,7 +48,6 @@ import com.glass.player.ui.components.ChevronRightIcon
 import com.glass.player.ui.components.GlassButton
 import com.glass.player.ui.components.GlassButtonVariant
 import com.glass.player.ui.components.GlassUpdateDialog
-import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 
 @Composable
