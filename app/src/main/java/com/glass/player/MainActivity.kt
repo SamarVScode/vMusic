@@ -67,7 +67,7 @@ import com.glass.player.ui.components.NowPlayingSheet
 import com.glass.player.ui.components.SettingsTabIcon
 import com.glass.player.ui.screens.LibraryScreen
 import com.glass.player.ui.screens.SettingsScreen
-import dev.chrisbanes.haze.HazeState
+import com.glass.player.design.HazeState
 import com.glass.player.design.rememberHazeState
 import com.glass.player.design.hazeSource
 import kotlinx.coroutines.launch
@@ -80,7 +80,7 @@ enum class AppTab {
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdge(statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         PlayerController.initialize(applicationContext)
 

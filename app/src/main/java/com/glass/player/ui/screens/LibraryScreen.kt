@@ -1,4 +1,4 @@
-﻿package com.glass.player.ui.screens
+package com.glass.player.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -51,7 +51,7 @@ import com.glass.player.ui.components.GlassButtonVariant
 import com.glass.player.ui.components.SearchIcon
 import com.glass.player.ui.components.SongRow
 import com.glass.player.ui.components.ToneFallbackIcon
-import dev.chrisbanes.haze.HazeState
+import com.glass.player.design.HazeState
 
 enum class LibraryFilter {
     All,
