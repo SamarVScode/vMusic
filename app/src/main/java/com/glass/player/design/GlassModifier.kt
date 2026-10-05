@@ -1,6 +1,7 @@
 package com.glass.player.design
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -15,12 +16,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
@@ -30,16 +30,18 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState as CoreHazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.hazeEffect
+import kotlinx.coroutines.launch
 
-/**
- * Lightweight, crash-proof native Compose glass blur state holder
- */
-class HazeState
+typealias HazeState = CoreHazeState
 
 @Composable
-fun rememberHazeState(): HazeState = remember { HazeState() }
+fun rememberHazeState(): CoreHazeState = remember { CoreHazeState() }
 
-fun Modifier.hazeSource(state: HazeState): Modifier = this
+fun Modifier.hazeSource(state: CoreHazeState?): Modifier =
+    if (state != null) this.hazeSource(state) else this
 
 enum class GlassQualityTier {
     TierA,
@@ -54,18 +56,15 @@ fun rememberAutoGlassQualityTier(overrideTier: GlassQualityTier? = null): GlassQ
     overrideTier ?: GlassQualityTier.TierB
 
 /**
- * Authentic iOS-style Liquid Glass Modifier:
- * 1. Deep frosted acrylic backing plate (OLED black compliant)
+ * Authentic iOS 26 Liquid Glass Modifier:
+ * 1. Hardware real-time backdrop blur (dev.chrisbanes.haze with RenderEffect fallback)
  * 2. Specular bevel hairline border (diagonal specular reflection)
  * 3. Top-rim curved bevel gleam (simulates ambient light on curved glass edge)
  * 4. Ambient glass drop shadow for physical separation
  * 5. Interactive dynamic touch sheen responding to finger gestures
- *
- * NOTE: Renders as a background backdrop layer so all text, icons, and buttons
- * remain 100% razor sharp and crisp with ZERO blur artifacts.
  */
 fun Modifier.glass(
-    hazeState: HazeState? = null,
+    hazeState: CoreHazeState? = null,
     shape: Shape = RoundedCornerShape(22.dp),
     tint: Color? = null,
     borderBrush: Brush? = null,
@@ -125,22 +124,31 @@ fun Modifier.glass(
         spotColor = Color(0x90000000)
     )
 
-    // 2. Translucent frosted backing plate
+    // 2. Real-time Haze backdrop blur or RenderEffect fallback
+    val blurModifier = if (hazeState != null) {
+        Modifier.hazeEffect(state = hazeState) {
+            this.blurRadius = blurRadius
+        }
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Modifier.blur(blurRadius)
+    } else {
+        Modifier
+    }
+
+    // 3. Translucent frosted backing plate
     val backingModifier = Modifier
         .clip(shape)
         .background(color = resolvedTint, shape = shape)
 
-    // 3. Specular border hairline
+    // 4. Specular border hairline
     val borderModifier = Modifier.border(
         width = borderWidth,
         brush = resolvedBorder,
         shape = shape
     )
 
-    // 4. Optical glass overlays (Top-rim light shine, inner bottom shadow, and dynamic touch sheen)
-    // Drawn behind content so typography, icons, and text are 100% crisp and never washed out
+    // 5. Optical glass overlays (Top-rim light shine, inner bottom shadow, and dynamic touch sheen)
     val opticalOverlay = Modifier.drawBehind {
-        // Top-rim specular reflection (iOS curved glass bevel light)
         val topRimBrush = Brush.verticalGradient(
             colors = listOf(Color(0x30FFFFFF), Color(0x08FFFFFF), Color.Transparent),
             startY = 0f,
@@ -148,7 +156,6 @@ fun Modifier.glass(
         )
         drawRect(brush = topRimBrush)
 
-        // Bottom inner ambient shadow
         val innerShadowBrush = Brush.verticalGradient(
             colors = listOf(Color.Transparent, Color(0x20000000)),
             startY = size.height * 0.70f,
@@ -156,7 +163,6 @@ fun Modifier.glass(
         )
         drawRect(brush = innerShadowBrush)
 
-        // Moving radial touch sheen
         if (touchPos.isSpecified && sheenAlpha.value > 0.01f) {
             val sheenRadius = (size.minDimension * 0.75f).coerceIn(40f, 280f)
             drawCircle(
@@ -177,6 +183,7 @@ fun Modifier.glass(
     this
         .then(pointerModifier)
         .then(shadowModifier)
+        .then(blurModifier)
         .then(backingModifier)
         .then(borderModifier)
         .then(opticalOverlay)

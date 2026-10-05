@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,16 +41,16 @@ import com.glass.player.BuildConfig
 import com.glass.player.design.GlassQualityTier
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
-import com.glass.player.design.HazeState
-import com.glass.player.design.hazeSource
 import com.glass.player.design.glass
 import com.glass.player.design.motion.GlassSprings
 import com.glass.player.design.motion.pressableScale
 import com.glass.player.domain.update.AppUpdateManager
+import com.glass.player.domain.update.UpdateState
 import com.glass.player.ui.components.ChevronRightIcon
 import com.glass.player.ui.components.GlassButton
 import com.glass.player.ui.components.GlassButtonVariant
 import com.glass.player.ui.components.GlassUpdateDialog
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -70,23 +73,16 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(GlassTheme.colors.background)
     ) {
+        // Grouped Settings Content scrolling smoothly under pinned header
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .padding(horizontal = 20.dp)
+                .padding(top = 110.dp, bottom = 160.dp)
         ) {
-            // Screen Header
-            GlassText(
-                text = "Settings",
-                style = GlassTheme.typography.largeTitle,
-                color = GlassTheme.colors.labelPrimary
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // SECTION 1: AUDIO ENGINE
-            SectionTitle(title = "AUDIO ENGINE")
+            SectionTitle(title = "AUDIO ENGINE (BIT-PERFECT)")
 
             InsetGroupCard(hazeState = hazeState) {
                 // Bit-Perfect Output
@@ -120,8 +116,8 @@ fun SettingsScreen(
 
                 // Equalizer broadcast note (for Poweramp & System EQ)
                 SettingIndicatorRow(
-                    title = "Equalizer Support",
-                    subtitle = "Poweramp & System EQ broadcast enabled (AudioEffect session ID)",
+                    title = "Equalizer Broadcast Support",
+                    subtitle = "AudioEffect session ID broadcast for system and external equalizers",
                     active = eqBroadcastEnabled
                 )
 
@@ -229,7 +225,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         GlassText(
-                            text = "Fetch verified releases from GitHub",
+                            text = "Queries latest GitHub releases for updates",
                             style = GlassTheme.typography.subhead,
                             color = GlassTheme.colors.labelSecondary
                         )
@@ -237,36 +233,80 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    GlassButton(
-                        text = "Check Now",
-                        variant = GlassButtonVariant.Primary,
-                        onClick = {
-                            scope.launch {
-                                updateManager.checkForUpdates()
-                            }
-                        }
+                    ChevronRightIcon(
+                        modifier = Modifier.size(16.dp),
+                        tint = GlassTheme.colors.labelSecondary
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(160.dp)) // Clearance for bottom tabs & floating miniplayer
         }
 
-        // Display GlassUpdateDialog on top when update is active
-        GlassUpdateDialog(
-            state = updateState,
-            onStartDownload = { url ->
-                scope.launch {
-                    updateManager.downloadUpdate(url)
-                }
-            },
-            onInstall = { uri ->
-                updateManager.launchInstallation(uri)
-            },
-            onDismiss = {
-                // Update dialog dismissed
+        // Pinned Liquid Glass Top Bar protecting Status Bar
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .glass(
+                    hazeState = hazeState,
+                    shape = RectangleShape,
+                    blurRadius = 28.dp,
+                    refractionIndex = 0.04f
+                )
+                .border(0.5.dp, GlassTheme.colors.glassBorder, RectangleShape)
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 14.dp)
+        ) {
+            GlassText(
+                text = "Settings",
+                style = GlassTheme.typography.largeTitle,
+                color = GlassTheme.colors.labelPrimary
+            )
+        }
+
+        // GitHub Release Update Dialog
+        when (val state = updateState) {
+            is UpdateState.Available -> {
+                GlassUpdateDialog(
+                    state = state,
+                    onStartDownload = { url ->
+                        scope.launch {
+                            updateManager.downloadUpdate(url)
+                        }
+                    },
+                    onInstall = { uri ->
+                        updateManager.launchInstallation(uri)
+                    },
+                    onDismiss = {}
+                )
             }
-        )
+            is UpdateState.Downloading -> {
+                GlassUpdateDialog(
+                    state = state,
+                    onStartDownload = {},
+                    onInstall = {},
+                    onDismiss = {}
+                )
+            }
+            is UpdateState.ReadyToInstall -> {
+                GlassUpdateDialog(
+                    state = state,
+                    onStartDownload = {},
+                    onInstall = { uri ->
+                        updateManager.launchInstallation(uri)
+                    },
+                    onDismiss = {}
+                )
+            }
+            is UpdateState.Error -> {
+                GlassUpdateDialog(
+                    state = state,
+                    onStartDownload = {},
+                    onInstall = {},
+                    onDismiss = {}
+                )
+            }
+            else -> {}
+        }
     }
 }
 
@@ -275,32 +315,32 @@ private fun SectionTitle(title: String) {
     GlassText(
         text = title,
         style = GlassTheme.typography.caption.copy(
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.sp
         ),
-        color = GlassTheme.colors.labelTertiary,
-        modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
+        color = GlassTheme.colors.labelSecondary,
+        modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
     )
 }
 
 @Composable
 private fun InsetGroupCard(
-    modifier: Modifier = Modifier,
-    hazeState: HazeState? = null,
+    hazeState: HazeState?,
     content: @Composable () -> Unit
 ) {
     val cardShape = RoundedCornerShape(20.dp)
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .glass(
                 hazeState = hazeState,
                 shape = cardShape,
-                blurRadius = 20.dp,
-                refractionIndex = 0.035f
+                blurRadius = 24.dp,
+                refractionIndex = 0.04f
             )
             .border(1.dp, GlassTheme.colors.glassBorder, cardShape)
+            .clip(cardShape)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             content()
@@ -337,12 +377,40 @@ private fun SettingToggleRow(
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
-        GlassSwitch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
+        // Custom iOS-style Liquid Switch
+        val switchWidth = 50.dp
+        val switchHeight = 30.dp
+        val thumbSize = 26.dp
+        val thumbOffset by animateDpAsState(
+            targetValue = if (checked) 21.dp else 3.dp,
+            animationSpec = GlassSprings.bouncy(),
+            label = "switch_thumb"
         )
+
+        Box(
+            modifier = Modifier
+                .size(width = switchWidth, height = switchHeight)
+                .clip(CircleShape)
+                .background(
+                    if (checked) GlassTheme.colors.accent else GlassTheme.colors.fillSubtle
+                )
+                .border(
+                    width = 1.dp,
+                    color = if (checked) GlassTheme.colors.accent else GlassTheme.colors.glassBorderStart,
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .offset(x = thumbOffset)
+                    .size(thumbSize)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            )
+        }
     }
 }
 
@@ -373,20 +441,20 @@ private fun SettingValueRow(
             )
         }
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
-        val pillShape = RoundedCornerShape(8.dp)
+        val valuePillShape = RoundedCornerShape(8.dp)
         Box(
             modifier = Modifier
-                .clip(pillShape)
+                .clip(valuePillShape)
                 .background(GlassTheme.colors.fillSubtle)
-                .border(0.5.dp, GlassTheme.colors.glassBorderStart, pillShape)
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
         ) {
             GlassText(
                 text = value,
-                style = GlassTheme.typography.tabularDigits.copy(fontWeight = FontWeight.Medium),
-                color = GlassTheme.colors.labelPrimary
+                style = GlassTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = GlassTheme.colors.accentText
             )
         }
     }
@@ -406,25 +474,11 @@ private fun SettingIndicatorRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Glowing status indicator dot
-                val dotColor = if (active) Color(0xFF34C759) else GlassTheme.colors.labelTertiary
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(dotColor)
-                )
-
-                GlassText(
-                    text = title,
-                    style = GlassTheme.typography.headline,
-                    color = GlassTheme.colors.labelPrimary
-                )
-            }
+            GlassText(
+                text = title,
+                style = GlassTheme.typography.headline,
+                color = GlassTheme.colors.labelPrimary
+            )
             Spacer(modifier = Modifier.height(2.dp))
             GlassText(
                 text = subtitle,
@@ -433,18 +487,21 @@ private fun SettingIndicatorRow(
             )
         }
 
-        val badgeShape = RoundedCornerShape(6.dp)
+        Spacer(modifier = Modifier.width(12.dp))
+
+        val indicatorPillShape = RoundedCornerShape(8.dp)
         Box(
             modifier = Modifier
-                .clip(badgeShape)
-                .background(Color(0xFF34C759).copy(alpha = 0.15f))
-                .border(0.5.dp, Color(0xFF34C759), badgeShape)
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .clip(indicatorPillShape)
+                .background(if (active) GlassTheme.colors.accent.copy(alpha = 0.16f) else GlassTheme.colors.fillSubtle)
+                .border(0.8.dp, if (active) GlassTheme.colors.accent else GlassTheme.colors.glassBorderStart, indicatorPillShape)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
         ) {
             GlassText(
-                text = "ACTIVE",
+                text = if (active) "ACTIVE" else "INACTIVE",
                 style = GlassTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF34C759)
+                color = if (active) GlassTheme.colors.accentText else GlassTheme.colors.labelSecondary
             )
         }
     }
@@ -456,52 +513,7 @@ private fun SettingDivider() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .height(0.5.dp)
+            .height(0.6.dp)
             .background(GlassTheme.colors.separator)
     )
-}
-
-/**
- * 100% Material-free custom Liquid Glass toggle switch
- */
-@Composable
-fun GlassSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val switchWidth = 48.dp
-    val switchHeight = 28.dp
-    val thumbSize = 22.dp
-    val padding = 3.dp
-
-    val trackColor = if (checked) GlassTheme.colors.accent else GlassTheme.colors.fillSubtle
-    val borderColor = if (checked) GlassTheme.colors.accent else GlassTheme.colors.separator
-
-    val thumbOffset by animateDpAsState(
-        targetValue = if (checked) switchWidth - thumbSize - padding else padding,
-        animationSpec = GlassSprings.snappy(),
-        label = "switch_thumb"
-    )
-
-    val capsuleShape = RoundedCornerShape(switchHeight / 2)
-
-    Box(
-        modifier = modifier
-            .size(width = switchWidth, height = switchHeight)
-            .clip(capsuleShape)
-            .background(trackColor)
-            .border(1.dp, borderColor, capsuleShape)
-            .pressableScale(onClick = { onCheckedChange(!checked) }),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        // Thumb circle
-        Box(
-            modifier = Modifier
-                .offset(x = thumbOffset)
-                .size(thumbSize)
-                .clip(CircleShape)
-                .background(Color.White)
-        )
-    }
 }

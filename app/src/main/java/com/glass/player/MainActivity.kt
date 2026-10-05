@@ -9,40 +9,35 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import com.glass.player.domain.toSong
-import com.glass.player.playback.PlayerController
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,34 +45,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.glass.player.design.GlassText
 import com.glass.player.design.GlassTheme
-import com.glass.player.design.HazeState
-import com.glass.player.design.hazeSource
 import com.glass.player.design.glass
 import com.glass.player.design.motion.GlassSprings
 import com.glass.player.design.motion.pressableScale
 import com.glass.player.domain.AudioRepository
 import com.glass.player.domain.Song
+import com.glass.player.domain.toSong
 import com.glass.player.domain.update.AppUpdateManager
+import com.glass.player.playback.PlayerController
 import com.glass.player.ui.components.LibraryTabIcon
 import com.glass.player.ui.components.MiniPlayer
 import com.glass.player.ui.components.NowPlayingSheet
 import com.glass.player.ui.components.SettingsTabIcon
 import com.glass.player.ui.screens.LibraryScreen
 import com.glass.player.ui.screens.SettingsScreen
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import dev.chrisbanes.haze.HazeState
+import com.glass.player.design.rememberHazeState
+import com.glass.player.design.hazeSource
 import kotlinx.coroutines.launch
 
 enum class AppTab {
@@ -88,6 +80,7 @@ enum class AppTab {
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         PlayerController.initialize(applicationContext)
 
@@ -108,12 +101,10 @@ class MainActivity : ComponentActivity() {
 fun MainAppScreen(updateManager: AppUpdateManager) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val hazeState = remember { HazeState() }
+    val hazeState = rememberHazeState()
 
-    // Active bottom tab
     var selectedTab by remember { mutableStateOf(AppTab.Library) }
 
-    // Permission state
     val permissionToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
     } else {
@@ -126,11 +117,9 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
         )
     }
 
-    // Song library state
     var songs by remember { mutableStateOf(AudioRepository.getAudiophileSampleTracks()) }
     var isScanning by remember { mutableStateOf(false) }
 
-    // Function to scan local tracks
     fun scanAudio() {
         coroutineScope.launch {
             isScanning = true
@@ -160,7 +149,6 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
         }
     }
 
-    // Real playback state from PlayerController
     val playerTrack by PlayerController.currentTrack.collectAsState()
     val isPlaying by PlayerController.isPlaying.collectAsState()
     val currentPositionMs by PlayerController.currentPositionMs.collectAsState()
@@ -170,7 +158,6 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
     var isRepeat by remember { mutableStateOf(false) }
     var isNowPlayingExpanded by remember { mutableStateOf(false) }
 
-    // Intercept back gesture to dismiss NowPlayingSheet if open
     BackHandler(enabled = isNowPlayingExpanded) {
         isNowPlayingExpanded = false
     }
@@ -248,7 +235,7 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
             }
         }
 
-        // Bottom liquid glass drop (deep ambient gradient scrim behind floating controls)
+        // Bottom ambient gradient scrim behind floating controls
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -275,7 +262,7 @@ fun MainAppScreen(updateManager: AppUpdateManager) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 74.dp, start = 12.dp, end = 12.dp)
+                .padding(bottom = 74.dp, start = 14.dp, end = 14.dp)
         ) {
             currentSong?.let { song ->
                 MiniPlayer(
@@ -391,7 +378,6 @@ private fun LiquidGlassTabBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Library Tab
                 TabBarItem(
                     title = "Library",
                     isSelected = selectedTab == AppTab.Library,
@@ -400,7 +386,6 @@ private fun LiquidGlassTabBar(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Settings Tab
                 TabBarItem(
                     title = "Settings",
                     isSelected = selectedTab == AppTab.Settings,
