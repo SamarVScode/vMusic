@@ -61,4 +61,5 @@ fun formatDuration(ms: Long): String {
 /**
  * Helper extension on Long duration.
  */
+@JvmName("formatDurationFromMillis")
 fun Long.formatDuration(): String = formatDuration(this)
